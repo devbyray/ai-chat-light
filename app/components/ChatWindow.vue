@@ -156,21 +156,57 @@ const handleSend = async (content: string) => {
           if (thinkStart === -1) {
             // No <think> ahead, all is text
             textBuffer += content.slice(i);
+            // Stream the final answer as it arrives
+            if (textBuffer && textBuffer !== prevText) {
+              // Only push new text
+              assistantParts.push({ type: 'text', content: textBuffer });
+              prevText = textBuffer;
+              textBuffer = '';
+              // Update the assistant message in the list
+              if (!tempAssistantId) {
+                tempAssistantId = uuidv4();
+                messages.value.push({
+                  id: tempAssistantId ?? '',
+                  role: 'assistant',
+                  parts: [...assistantParts],
+                  timestamp: new Date().toISOString(),
+                });
+              } else {
+                const idx = messages.value.findIndex(m => m.id === tempAssistantId);
+                if (idx !== -1) {
+                  messages.value[idx]!.parts = [...assistantParts];
+                }
+              }
+            }
             break;
           } else {
             // Text before <think>
             if (thinkStart > i) {
               textBuffer += content.slice(i, thinkStart);
+              if (textBuffer && textBuffer !== prevText) {
+                assistantParts.push({ type: 'text', content: textBuffer });
+                prevText = textBuffer;
+                textBuffer = '';
+                // Update the assistant message in the list
+                if (!tempAssistantId) {
+                  tempAssistantId = uuidv4();
+                  messages.value.push({
+                    id: tempAssistantId ?? '',
+                    role: 'assistant',
+                    parts: [...assistantParts],
+                    timestamp: new Date().toISOString(),
+                  });
+                } else {
+                  const idx = messages.value.findIndex(m => m.id === tempAssistantId);
+                  if (idx !== -1) {
+                    messages.value[idx]!.parts = [...assistantParts];
+                  }
+                }
+              }
             }
             i = thinkStart + 7; // skip <think>
             inThink = true;
             thinkBuffer = '';
-            // Push any accumulated text as a part
-            if (textBuffer && textBuffer !== prevText) {
-              assistantParts.push({ type: 'text', content: textBuffer });
-              prevText = textBuffer;
-              textBuffer = '';
-            }
             // Start a new streaming think
             streamingThinks.value.push('');
           }
@@ -191,29 +227,12 @@ const handleSend = async (content: string) => {
             if (streamingThinks.value.length > 0) {
               streamingThinks.value[streamingThinks.value.length - 1] = thinkBuffer;
             }
-            // Push to assistantParts as a think part (optional: or skip if you only want to show in streaming)
-            // assistantParts.push({ type: 'think', content: thinkBuffer });
             // Remove from streamingThinks
             streamingThinks.value.pop();
             inThink = false;
             thinkBuffer = '';
             i = thinkEnd + 8; // skip </think>
           }
-        }
-      }
-      // Update the assistant message in the list
-      if (!tempAssistantId) {
-        tempAssistantId = uuidv4();
-        messages.value.push({
-          id: tempAssistantId ?? '',
-          role: 'assistant',
-          parts: [...assistantParts],
-          timestamp: new Date().toISOString(),
-        });
-      } else {
-        const idx = messages.value.findIndex(m => m.id === tempAssistantId);
-        if (idx !== -1) {
-          messages.value[idx]!.parts = [...assistantParts];
         }
       }
     }
