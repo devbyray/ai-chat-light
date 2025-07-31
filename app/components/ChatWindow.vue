@@ -1,63 +1,92 @@
 
 <template>
-  <section class="max-w-xl mx-auto mt-8 p-4 bg-white rounded shadow" aria-label="Chat window">
-    <h2 class="text-xl font-bold mb-4">AI Chat</h2>
-    <div class="mb-4">
-      <label for="model-select" class="font-medium mr-2">Model:</label>
-      <select
-        id="model-select"
-        v-model="selectedModel"
-        class="border rounded px-2 py-1"
-        :aria-busy="modelsLoading"
-        :disabled="modelsLoading"
-      >
-        <option v-for="model in models" :key="model" :value="model">
-          {{ model }}
-        </option>
-      </select>
-      <span v-if="modelsLoading" class="ml-2 text-gray-500">Loading models…</span>
-    </div>
-    <MessageList :messages="messages" />
-    <MessageInput @send="handleSend" :loading="loading" />
+  <section
+    class="w-full max-w-lg mx-auto mt-8 p-0 rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-800 flex flex-col min-h-[500px]"
+    aria-label="Chat window"
+    tabindex="0"
+  >
+    <header class="px-6 pt-6 pb-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+      <h2 class="text-2xl font-bold flex-1">AI Chat</h2>
+      <div class="flex items-center gap-2">
+        <label for="model-select" class="font-medium text-sm">Model:</label>
+        <select
+          id="model-select"
+          v-model="selectedModel"
+          class="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500"
+          :aria-busy="modelsLoading"
+          :disabled="modelsLoading"
+          aria-label="Select LLM model"
+        >
+          <option v-for="model in models" :key="model" :value="model">
+            {{ model }}
+          </option>
+        </select>
+        <span v-if="modelsLoading" class="ml-2 text-gray-500 text-xs">Loading…</span>
+      </div>
+    </header>
+    <main class="flex-1 px-6 py-4 overflow-y-auto">
+      <MessageList :messages="messages" :streamingThink="streamingThink" />
+      <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 text-sm" role="alert" aria-live="assertive">{{ errorMsg }}</div>
+    </main>
+    <footer class="px-6 pb-6 pt-2 border-t border-gray-100 dark:border-gray-800 bg-transparent">
+      <MessageInput @send="handleSend" :loading="loading" />
+    </footer>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { Ollama } from 'ollama';
 import MessageList from './MessageList.vue';
 import MessageInput from './MessageInput.vue';
 
-
-
+type MessagePart = {
+  type: 'text' | 'think';
+  content: string;
+};
 type Message = {
   id: string;
   role: 'user' | 'assistant';
-  content: string;
+  parts: MessagePart[];
   timestamp: string;
 };
-
 
 const messages = ref<Message[]>([]);
 const loading = ref(false);
 const models = ref<string[]>([]);
 const selectedModel = ref<string>('');
 const modelsLoading = ref(true);
+const errorMsg = ref<string | undefined>(undefined);
+const streamingThink = ref<string | undefined>(undefined);
+
+// Tailwind dark mode: toggle 'dark' class on <html> based on system preference
+onMounted(() => {
+  const setHtmlDark = () => {
+    const html = document.documentElement;
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+  };
+  setHtmlDark();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setHtmlDark);
+});
 
 const ollama = new Ollama({ host: 'http://localhost:11434' });
 
 const fetchModels = async () => {
   modelsLoading.value = true;
   try {
-    // The official ollama npm package exposes a .list() method
     const result = await ollama.list();
-    // result.models is an array of { name: string, ... }
     models.value = result.models.map((m: { name: string }) => m.name);
     selectedModel.value = models.value[0] || '';
-  } catch (err) {
+    errorMsg.value = undefined;
+  } catch (err: any) {
     models.value = [];
     selectedModel.value = '';
+    errorMsg.value = 'Failed to load models.';
   } finally {
     modelsLoading.value = false;
   }
@@ -66,49 +95,124 @@ const fetchModels = async () => {
 fetchModels();
 
 const handleSend = async (content: string) => {
+  errorMsg.value = undefined;
+  streamingThink.value = undefined;
   if (!selectedModel.value) {
-    messages.value.push({
-      id: uuidv4(),
-      role: 'assistant',
-      content: 'No model selected.',
-      timestamp: new Date().toISOString(),
-    });
+    errorMsg.value = 'No model selected.';
+    return;
+  }
+  if (!content.trim()) {
+    errorMsg.value = 'Message cannot be empty.';
     return;
   }
   const userMsg: Message = {
     id: uuidv4(),
     role: 'user',
-    content,
+    parts: [{ type: 'text', content }],
     timestamp: new Date().toISOString(),
   };
   messages.value.push(userMsg);
   loading.value = true;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
+  let received = false;
   try {
-    const response = await ollama.chat({
+    let tempAssistantId: string | undefined = undefined;
+    let assistantParts: MessagePart[] = [];
+    const chatStream = await ollama.chat({
       model: selectedModel.value,
-      messages: messages.value.map((msg: Message) => ({ role: msg.role, content: msg.content })),
+      messages: messages.value.map((msg: Message) => ({
+        role: msg.role,
+        content: msg.parts.map(p => p.content).join(''),
+      })),
+      stream: true,
     });
-    messages.value.push({
-      id: uuidv4(),
-      role: 'assistant',
-      content: response.message.content,
-      timestamp: new Date().toISOString(),
-    });
+
+    // Show waiting message if nothing received after 3s
+    timeoutId = setTimeout(() => {
+      if (!received) {
+        errorMsg.value = 'Waiting for model response...';
+      }
+    }, 3000);
+
+    let prevText = '';
+    let prevThink = '';
+    for await (const chunk of chatStream) {
+      // eslint-disable-next-line no-console
+      console.log('Ollama chunk:', chunk);
+      received = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+        errorMsg.value = undefined;
+      }
+      // Parse all <think>...</think> blocks and text between them
+      const regex = /<think>([\s\S]*?)<\/think>/g;
+      let lastIndex = 0;
+      let match;
+      let newParts: MessagePart[] = [];
+      while ((match = regex.exec(chunk.message.content)) !== null) {
+        // Text before <think>
+        if (match.index > lastIndex) {
+          const text = chunk.message.content.slice(lastIndex, match.index);
+          if (text && text !== prevText) {
+            newParts.push({ type: 'text', content: text });
+            prevText = text;
+          }
+        }
+        // <think> block
+        const thinkText = match[1];
+        if (thinkText && thinkText !== prevThink) {
+          newParts.push({ type: 'think', content: thinkText });
+          prevThink = thinkText;
+        }
+        lastIndex = regex.lastIndex;
+      }
+      // Any text after the last <think>
+      if (lastIndex < chunk.message.content.length) {
+        const text = chunk.message.content.slice(lastIndex);
+        if (text && text !== prevText) {
+          newParts.push({ type: 'text', content: text });
+          prevText = text;
+        }
+      }
+      // Only add new parts
+      for (const part of newParts) {
+        assistantParts.push(part);
+      }
+      if (!tempAssistantId) {
+        tempAssistantId = uuidv4();
+        messages.value.push({
+          id: tempAssistantId ?? '',
+          role: 'assistant',
+          parts: [...assistantParts],
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        const idx = messages.value.findIndex(m => m.id === tempAssistantId);
+        if (idx !== -1) {
+          messages.value[idx]!.parts = [...assistantParts];
+        }
+      }
+    }
+    // After stream ends, clear streamingThink
+    streamingThink.value = undefined;
+    if (!received) {
+      errorMsg.value = 'No response received from model.';
+    }
   } catch (err: any) {
-    messages.value.push({
-      id: uuidv4(),
-      role: 'assistant',
-      content: 'Error: ' + (err?.message || 'Failed to get response.'),
-      timestamp: new Date().toISOString(),
-    });
+    errorMsg.value = 'Error: ' + (err?.message || 'Failed to get response.');
   } finally {
     loading.value = false;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 };
 </script>
 
 <style scoped>
 section {
-  min-height: 400px;
+  outline: none;
+  transition: background 0.2s, color 0.2s;
 }
 </style>
