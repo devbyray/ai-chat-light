@@ -5,7 +5,7 @@
 
 ## 🧱 Project Overview
 
-This repository is a starter kit for rapid prototyping with modern web technologies. It aims to provide a maintainable, accessible, and efficient foundation for full-stack development.
+This project is a lightweight AI chat application designed for local AI LLMs, supporting Ollama and MCP servers. It is built with Nuxt.js and Tailwind CSS, providing a maintainable, accessible, and efficient foundation for full-stack development.
 
 **Tech stack:** React (frontend), Node.js (backend), Vitest (testing), CSS modules.
 
