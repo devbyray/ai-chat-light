@@ -222,11 +222,13 @@ const handleSend = async (content: string) => {
       assistantParts.push({ type: 'text', content: textBuffer });
       prevText = textBuffer;
     }
-    streamingThinks.value = [];
-    if (!received) {
-      errorMsg.value = 'No response received from model.';
+    // After stream ends, update the assistant message one last time to show the final answer
+    if (tempAssistantId) {
+      const idx = messages.value.findIndex(m => m.id === tempAssistantId);
+      if (idx !== -1) {
+        messages.value[idx]!.parts = [...assistantParts];
+      }
     }
-    // After stream ends, clear streamingThinks
     streamingThinks.value = [];
     if (!received) {
       errorMsg.value = 'No response received from model.';
