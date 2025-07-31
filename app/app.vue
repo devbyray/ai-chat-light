@@ -1,6 +1,10 @@
 <template>
   <div>
     <NuxtRouteAnnouncer />
-    <NuxtWelcome />
+    <ChatWindow />
   </div>
+
 </template>
+<script setup lang="ts">
+import ChatWindow from './components/ChatWindow.vue';
+</script>
