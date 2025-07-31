@@ -25,7 +25,7 @@
       </div>
     </header>
     <main class="flex-1 px-6 py-4 overflow-y-auto">
-      <MessageList :messages="messages" :streamingThink="streamingThink" />
+      <MessageList :messages="messages" :streamingThinks="streamingThinks" />
       <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 text-sm" role="alert" aria-live="assertive">{{ errorMsg }}</div>
     </main>
     <footer class="px-6 pb-6 pt-2 border-t border-gray-100 dark:border-gray-800 bg-transparent">
@@ -58,7 +58,7 @@ const models = ref<string[]>([]);
 const selectedModel = ref<string>('');
 const modelsLoading = ref(true);
 const errorMsg = ref<string | undefined>(undefined);
-const streamingThink = ref<string | undefined>(undefined);
+const streamingThinks = ref<string[]>([]);
 
 // Tailwind dark mode: toggle 'dark' class on <html> based on system preference
 onMounted(() => {
@@ -96,7 +96,7 @@ fetchModels();
 
 const handleSend = async (content: string) => {
   errorMsg.value = undefined;
-  streamingThink.value = undefined;
+  streamingThinks.value = [];
   if (!selectedModel.value) {
     errorMsg.value = 'No model selected.';
     return;
@@ -135,7 +135,10 @@ const handleSend = async (content: string) => {
     }, 3000);
 
     let prevText = '';
-    let prevThink = '';
+    // Streaming <think> block state
+    let inThink = false;
+    let thinkBuffer = '';
+    let textBuffer = '';
     for await (const chunk of chatStream) {
       // eslint-disable-next-line no-console
       console.log('Ollama chunk:', chunk);
@@ -145,40 +148,60 @@ const handleSend = async (content: string) => {
         timeoutId = undefined;
         errorMsg.value = undefined;
       }
-      // Parse all <think>...</think> blocks and text between them
-      const regex = /<think>([\s\S]*?)<\/think>/g;
-      let lastIndex = 0;
-      let match;
-      let newParts: MessagePart[] = [];
-      while ((match = regex.exec(chunk.message.content)) !== null) {
-        // Text before <think>
-        if (match.index > lastIndex) {
-          const text = chunk.message.content.slice(lastIndex, match.index);
-          if (text && text !== prevText) {
-            newParts.push({ type: 'text', content: text });
-            prevText = text;
+      let content = chunk.message.content;
+      let i = 0;
+      while (i < content.length) {
+        if (!inThink) {
+          const thinkStart = content.indexOf('<think>', i);
+          if (thinkStart === -1) {
+            // No <think> ahead, all is text
+            textBuffer += content.slice(i);
+            break;
+          } else {
+            // Text before <think>
+            if (thinkStart > i) {
+              textBuffer += content.slice(i, thinkStart);
+            }
+            i = thinkStart + 7; // skip <think>
+            inThink = true;
+            thinkBuffer = '';
+            // Push any accumulated text as a part
+            if (textBuffer && textBuffer !== prevText) {
+              assistantParts.push({ type: 'text', content: textBuffer });
+              prevText = textBuffer;
+              textBuffer = '';
+            }
+            // Start a new streaming think
+            streamingThinks.value.push('');
+          }
+        } else {
+          const thinkEnd = content.indexOf('</think>', i);
+          if (thinkEnd === -1) {
+            // All is part of <think>
+            thinkBuffer += content.slice(i);
+            // Update last streaming think
+            if (streamingThinks.value.length > 0) {
+              streamingThinks.value[streamingThinks.value.length - 1] = thinkBuffer;
+            }
+            break;
+          } else {
+            // End of <think> found
+            thinkBuffer += content.slice(i, thinkEnd);
+            // Update last streaming think
+            if (streamingThinks.value.length > 0) {
+              streamingThinks.value[streamingThinks.value.length - 1] = thinkBuffer;
+            }
+            // Push to assistantParts as a think part (optional: or skip if you only want to show in streaming)
+            // assistantParts.push({ type: 'think', content: thinkBuffer });
+            // Remove from streamingThinks
+            streamingThinks.value.pop();
+            inThink = false;
+            thinkBuffer = '';
+            i = thinkEnd + 8; // skip </think>
           }
         }
-        // <think> block
-        const thinkText = match[1];
-        if (thinkText && thinkText !== prevThink) {
-          newParts.push({ type: 'think', content: thinkText });
-          prevThink = thinkText;
-        }
-        lastIndex = regex.lastIndex;
       }
-      // Any text after the last <think>
-      if (lastIndex < chunk.message.content.length) {
-        const text = chunk.message.content.slice(lastIndex);
-        if (text && text !== prevText) {
-          newParts.push({ type: 'text', content: text });
-          prevText = text;
-        }
-      }
-      // Only add new parts
-      for (const part of newParts) {
-        assistantParts.push(part);
-      }
+      // Update the assistant message in the list
       if (!tempAssistantId) {
         tempAssistantId = uuidv4();
         messages.value.push({
@@ -194,8 +217,17 @@ const handleSend = async (content: string) => {
         }
       }
     }
-    // After stream ends, clear streamingThink
-    streamingThink.value = undefined;
+    // After stream ends, flush any remaining text
+    if (textBuffer && textBuffer !== prevText) {
+      assistantParts.push({ type: 'text', content: textBuffer });
+      prevText = textBuffer;
+    }
+    streamingThinks.value = [];
+    if (!received) {
+      errorMsg.value = 'No response received from model.';
+    }
+    // After stream ends, clear streamingThinks
+    streamingThinks.value = [];
     if (!received) {
       errorMsg.value = 'No response received from model.';
     }

@@ -1,6 +1,5 @@
 <template>
   <div>
-    <div v-if="streamingThink" class="think-block mb-2" aria-label="Reasoning">🧠 <span v-html="streamingThink.replace(/\n/g, '<br>')"></span></div>
     <ul class="space-y-2" aria-live="polite">
       <li v-for="msg in messages" :key="msg.id" :class="msg.role === 'user' ? 'text-right' : 'text-left'" class="dark:text-gray-200 text-gray-800">
         <span :class="msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-800'" class="inline-block px-3 py-2 rounded text-base">
@@ -16,11 +15,19 @@
         <span class="sr-only">{{ msg.role }}</span>
       </li>
     </ul>
+    <div v-if="streamingThinks && streamingThinks.length" class="mt-4 sticky bottom-0 z-10" role="status" aria-live="polite">
+      <span
+        v-for="(think, i) in streamingThinks"
+        :key="i"
+        class="think-block"
+        aria-label="Reasoning"
+        style="display:inline-block; margin-right:0.5rem;"
+      >🧠 <span v-html="think.replace(/\n/g, '<br>')"></span></span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-
 import { defineProps } from 'vue';
 
 type MessagePart = {
@@ -34,17 +41,7 @@ type Message = {
   timestamp: string;
 };
 
-const props = defineProps<{ messages: Message[]; streamingThink?: string }>();
-
-/**
- * Parse <think>...</think> blocks and render them as visually distinct, accessible elements.
- * Returns HTML string with <div class="think-block"> for the think part.
- */
-const parseThink = (content: string) => {
-  return content.replace(/<think>([\s\S]*?)<\/think>/g, (_match, thinkText) => {
-    return `<div class='think-block' aria-label='Reasoning'>🧠 <span>${thinkText.trim().replace(/\n/g, '<br>')}</span></div>`;
-  });
-};
+const props = defineProps<{ messages: Message[]; streamingThinks?: string[] }>();
 </script>
 
 
@@ -62,7 +59,6 @@ const parseThink = (content: string) => {
 }
 
 .think-block {
-  display: block;
   background: linear-gradient(90deg, #fef9c3 0%, #fef08a 100%);
   color: #92400e;
   border-radius: 0.5rem;
