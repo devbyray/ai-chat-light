@@ -4,14 +4,14 @@
     aria-label="Chat window"
     tabindex="0"
   >
-    <header class="p-4 border-b  flex items-center gap-2 border border-gray-100 dark:border-gray-700 dark:bg-gray-900/90 bg-white fixed top-0 left-0 w-full z-10">
+    <header class="p-4 border-b  flex items-center gap-2 border-gray-500 dark:border-gray-700 dark:bg-gray-900/90 bg-white/90 fixed top-0 left-0 w-full z-10">
       <h2 class="text-2xl font-bold flex-1">AI Chat</h2>
       <div class="flex items-center gap-2">
         <label for="model-select" class="font-medium text-sm">Model:</label>
         <select
           id="model-select"
           v-model="selectedModel"
-          class="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500"
+          class="border border-gray-500 dark:border-gray-700 rounded px-2 py-2 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500"
           :aria-busy="modelsLoading"
           :disabled="modelsLoading"
           aria-label="Select LLM model"
@@ -29,7 +29,7 @@
       </div>
       <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 text-sm" role="alert" aria-live="assertive">{{ errorMsg }}</div>
     </main>
-    <footer class="p-4 border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900/90 fixed bottom-0 left-0 w-full">
+    <footer class="p-4 border-t border-gray-500 dark:border-gray-700 bg-gray-100/90 dark:bg-gray-900/90 fixed bottom-0 left-0 w-full">
       <div class="mx-auto max-w-3xl">
       <MessageInput @send="handleSend" :loading="loading" />
       </div>
