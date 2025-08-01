@@ -1,11 +1,10 @@
 <template>
   <section
-    class="w-full max-w-lg mx-auto mt-8 p-0 rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-800 flex flex-col"
-    style="height:80dvh; min-height:500px;"
+    class="w-full p-0 shadow-xl bg-white/90 dark:bg-gray-900/90  dark:border-gray-700 min-h-[calc(100dvh-2rem)] grid grid-rows-[auto_1fr_auto] relative"
     aria-label="Chat window"
     tabindex="0"
   >
-    <header class="px-6 pt-6 pb-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+    <header class="p-4 border-b  flex items-center gap-2 border border-gray-100 dark:border-gray-700 dark:bg-gray-900/90 bg-white fixed top-0 left-0 w-full z-10">
       <h2 class="text-2xl font-bold flex-1">AI Chat</h2>
       <div class="flex items-center gap-2">
         <label for="model-select" class="font-medium text-sm">Model:</label>
@@ -24,14 +23,16 @@
         <span v-if="modelsLoading" class="ml-2 text-gray-500 text-xs">Loading…</span>
       </div>
     </header>
-    <main class="flex-1 px-6 py-4">
-      <div ref="msgListContainer" class="h-full overflow-y-auto max-h-[calc(80dvh-150px)]" role="log" aria-live="polite">
+    <main class="flex-1 px-6 py-4  min-h-[80dvh] h-full overflow-y-auto">
+      <div ref="msgListContainer" role="log" aria-live="polite" class="pb-16">
         <MessageList :messages="messages" :streamingThinks="streamingThinks" :fullAssistantMessages="fullAssistantMessages" />
       </div>
       <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 text-sm" role="alert" aria-live="assertive">{{ errorMsg }}</div>
     </main>
-    <footer class="px-6 pb-6 pt-2 border-t border-gray-100 dark:border-gray-800 bg-transparent">
+    <footer class="p-4 border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900/90 fixed bottom-0 left-0 w-full">
+      <div class="mx-auto max-w-3xl">
       <MessageInput @send="handleSend" :loading="loading" />
+      </div>
     </footer>
   </section>
 </template>

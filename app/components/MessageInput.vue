@@ -1,22 +1,33 @@
 <template>
   <form @submit.prevent="onSend" class="flex gap-2" autocomplete="off">
     <label for="chat-input" class="sr-only">Message</label>
-    <input
-      id="chat-input"
-      v-model="input"
-      type="text"
-      class="flex-1 border rounded px-3 py-2 text-base"
-      :aria-invalid="!!error"
-      :aria-describedby="error ? 'input-error' : undefined"
-      placeholder="Type your message..."
-      autocomplete="off"
-      required
-      @keydown.enter.exact.prevent="onSend"
-    />
-    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded" :disabled="loading">
-      <span v-if="loading">Sending…</span>
-      <span v-else>Send</span>
-    </button>
+      <input
+        id="chat-input"
+        v-model="input"
+        type="text"
+        class="flex-1 border rounded px-3 py-2 text-base"
+        :aria-invalid="!!error"
+        :aria-describedby="error ? 'input-error' : undefined"
+        placeholder="Type your message..."
+        autocomplete="off"
+        required
+        @keydown.enter.exact.prevent="onSend"
+      />
+      <button
+        v-if="!props.loading"
+        type="submit"
+        class="bg-blue-600 text-white px-4 py-2 rounded"
+        :disabled="props.loading || !input.trim()"
+      >
+        Send
+      </button>
+      <Icon
+        v-else-if="props.loading"
+        name="mdi:loading"
+        class="animate-spin text-blue-500 ml-2"
+        style="font-size:1.8em;"
+        aria-label="Loading"
+      />
   </form>
   <p v-if="error" id="input-error" class="text-red-600 mt-1" role="alert">{{ error }}</p>
 </template>
@@ -26,9 +37,11 @@ import { ref, defineEmits } from 'vue';
 
 const input = ref('');
 const error = ref<string | undefined>(undefined);
-const loading = ref(false);
 
 const emit = defineEmits(['send']);
+const props = defineProps<{
+  loading?: boolean;
+}>();
 
 const onSend = () => {
   if (!input.value.trim()) {

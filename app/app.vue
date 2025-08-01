@@ -1,6 +1,5 @@
 <template>
-  <div class="dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
-    <NuxtRouteAnnouncer />
+  <div class="dark:bg-gray-900 dark:text-gray-100 min-h-[100dvh] p-4">
     <ChatWindow />
   </div>
 

@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+
+.content {
+    p {
+        @apply mb-4;
+    }
+    
+    li {
+        @apply mb-2;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-bold mb-2;
+    }
+    
+    ul {
+        @apply list-disc pl-5;
+    }
+    ol {
+        @apply list-decimal pl-5;
+    }
+
+    hr {
+        @apply my-4 border-gray-300 dark:border-gray-600 max-w-xl mx-auto;
+    }
+}

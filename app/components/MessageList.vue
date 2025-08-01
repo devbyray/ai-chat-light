@@ -1,37 +1,36 @@
 <template>
-  <div>
-    <ul class="space-y-2" aria-live="polite">
+  <div class="max-w-3xl w-full mx-auto">
+    <ul class="space-y-2 list-none pl-0" aria-live="polite">
       <li v-for="msg in messages" :key="msg.id" :class="msg.role === 'user' ? 'text-right' : 'text-left'" class="dark:text-gray-200 text-gray-800">
-        <span :class="msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-800'" class="inline-block px-3 py-2 rounded text-base">
+        <span :class="msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-800'" class="inline-block px-3 py-2 rounded text-base content">
             <template v-for="(part, i) in msg.parts" :key="i" >
                 <template v-if="part.type === 'text'">
-                    <span v-if="part.done" v-html="part.content" class="part-done-html"></span>
-                    <span v-else-if="part.type === 'text' && msg.role === 'user'" class="part-else-content">{{ part.content }}</span>
+                    <span v-if="part.done" v-html="part.content" class="part-done-html" data-section="assistant-final"></span>
+                    <span v-else-if="part.type === 'text' && msg.role === 'user'" class="part-else-content" data-section="user-question">{{ part.content }}</span>
                 </template>
                 <template v-else-if="part.type === 'think'">
-                    <span class="think-block" aria-label="Reasoning">
+                    <span class="think-block" aria-label="Reasoning" data-section="thinking">
                     🧠 <span v-if="part.done" v-html="part.content"></span>
                     <span v-else>{{ part.content }}</span>
                     </span>
                 </template>
             </template>
             <template v-if="msg.role === 'assistant' && props.fullAssistantMessages && msg.parentId && props.fullAssistantMessages[msg.parentId]">
-              <span class="bg-gray-100 dark:bg-gray-800 dark:text-gray-200 text-gray-800 inline-block px-3 py-2 rounded text-base">
-                <span v-html="marked.parse(props.fullAssistantMessages[msg.parentId] || '')"></span>
-              </span>
+              <div class="bg-gray-100 dark:bg-gray-800 dark:text-gray-200 text-gray-800 inline-block px-3 py-2 rounded text-base" data-section="assistant-full" v-html="marked.parse(props.fullAssistantMessages[msg.parentId] || '')">
+              </div>
             </template>
         </span>
         <span class="sr-only">{{ msg.role }}</span>
       </li>
     </ul>
-    <div v-if="streamingThinks && streamingThinks.length" class="mt-4" role="status" aria-live="polite" ref="thinksContainer">
-      <span
+    <div v-if="streamingThinks && streamingThinks.length" data-section="thinking-stream" class="mt-4 " role="status" aria-live="polite" ref="thinksContainer">
+      <div
         v-for="(think, i) in streamingThinks"
         :key="i"
-        class="bg-gray-100 dark:bg-gray-800 dark:text-gray-200 text-gray-800 inline-block px-3 py-2 rounded text-base"
+        class="bg-gray-100 dark:bg-gray-800 dark:text-gray-200 text-gray-800 inline-block px-3 py-2 rounded text-base max-h-[20vh] overflow-hidden"
         aria-label="Reasoning"
         style="display:inline-block; margin-right:0.5rem;"
-      >🧠 <span v-html="think.replace(/\n/g, '<br>')"></span></span>
+      >🧠 <span v-html="think.replace(/\n/g, '<br>')"></span></div>
     </div>
   </div>
 </template>
