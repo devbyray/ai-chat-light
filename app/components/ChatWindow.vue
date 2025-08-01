@@ -25,7 +25,7 @@
     </header>
     <main class="flex-1 px-6 py-4  min-h-[80dvh] h-full overflow-y-auto">
       <div ref="msgListContainer" role="log" aria-live="polite" class="pb-16">
-        <MessageList :messages="messages" :streamingThinks="streamingThinks" :fullAssistantMessages="fullAssistantMessages" />
+        <MessageList :loading="loading" :messages="messages" :streamingThinks="streamingThinks" :fullAssistantMessages="fullAssistantMessages" />
       </div>
       <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 text-sm" role="alert" aria-live="assertive">{{ errorMsg }}</div>
     </main>

@@ -1,5 +1,5 @@
 <template>
-  <span class="part-done-html" v-html="content" data-section="assistant-final"></span>
+  <div class="part-done-html" v-html="content" data-section="assistant-final"></div>
 </template>
 
 <script setup lang="ts">
