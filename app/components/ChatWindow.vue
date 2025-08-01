@@ -1,7 +1,8 @@
 
 <template>
   <section
-    class="w-full max-w-lg mx-auto mt-8 p-0 rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-800 flex flex-col min-h-[500px]"
+    class="w-full max-w-lg mx-auto mt-8 p-0 rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-800 flex flex-col"
+    style="height:80dvh; min-height:500px;"
     aria-label="Chat window"
     tabindex="0"
   >
@@ -24,8 +25,10 @@
         <span v-if="modelsLoading" class="ml-2 text-gray-500 text-xs">Loading…</span>
       </div>
     </header>
-    <main class="flex-1 px-6 py-4 overflow-y-auto">
-      <MessageList :messages="messages" :streamingThinks="streamingThinks" />
+    <main class="flex-1 px-6 py-4">
+      <div ref="msgListContainer" class="h-full overflow-y-auto max-h-[calc(80dvh-150px)]" role="log" aria-live="polite">
+        <MessageList :messages="messages" :streamingThinks="streamingThinks" />
+      </div>
       <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 text-sm" role="alert" aria-live="assertive">{{ errorMsg }}</div>
     </main>
     <footer class="px-6 pb-6 pt-2 border-t border-gray-100 dark:border-gray-800 bg-transparent">
@@ -35,6 +38,14 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick, watch, ref as vueRef } from 'vue';
+// ...existing code...
+
+const msgListContainer = vueRef<HTMLElement | null>(null);
+
+// ...existing code...
+
+
 import { ref, onMounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { Ollama } from 'ollama';
@@ -261,6 +272,14 @@ const handleSend = async (content: string) => {
     }
   }
 };
+
+// Place watch after messages and streamingThinks are declared
+watch([messages, streamingThinks], async () => {
+  await nextTick();
+  if (msgListContainer.value) {
+    msgListContainer.value.scrollTop = msgListContainer.value.scrollHeight;
+  }
+});
 </script>
 
 <style scoped>

@@ -15,7 +15,7 @@
         <span class="sr-only">{{ msg.role }}</span>
       </li>
     </ul>
-    <div v-if="streamingThinks && streamingThinks.length" class="mt-4 sticky bottom-0 z-10" role="status" aria-live="polite">
+    <div v-if="streamingThinks && streamingThinks.length" class="mt-4" role="status" aria-live="polite">
       <span
         v-for="(think, i) in streamingThinks"
         :key="i"
@@ -59,8 +59,8 @@ const props = defineProps<{ messages: Message[]; streamingThinks?: string[] }>()
 }
 
 .think-block {
-  background: linear-gradient(90deg, #fef9c3 0%, #fef08a 100%);
-  color: #92400e;
+  /* background: linear-gradient(90deg, #fef9c3 0%, #fef08a 100%); */
+  /* color: #92400e; */
   border-radius: 0.5rem;
   padding: 0.5rem 1rem;
   margin-bottom: 0.5rem;
@@ -69,7 +69,7 @@ const props = defineProps<{ messages: Message[]; streamingThinks?: string[] }>()
   box-shadow: 0 1px 4px 0 rgba(0,0,0,0.04);
 }
 .dark .think-block {
-  background: linear-gradient(90deg, #27272a 0%, #52525b 100%);
-  color: #facc15;
+  /* background: linear-gradient(90deg, #27272a 0%, #52525b 100%);
+  color: #facc15; */
 }
 </style>
