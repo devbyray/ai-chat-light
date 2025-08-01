@@ -15,11 +15,11 @@
         <span class="sr-only">{{ msg.role }}</span>
       </li>
     </ul>
-    <div v-if="streamingThinks && streamingThinks.length" class="mt-4" role="status" aria-live="polite">
+    <div v-if="streamingThinks && streamingThinks.length" class="mt-4" role="status" aria-live="polite" ref="thinksContainer">
       <span
         v-for="(think, i) in streamingThinks"
         :key="i"
-        class="think-block"
+        class="bg-gray-100 dark:bg-gray-800 dark:text-gray-200 text-gray-800 inline-block px-3 py-2 rounded text-base"
         aria-label="Reasoning"
         style="display:inline-block; margin-right:0.5rem;"
       >🧠 <span v-html="think.replace(/\n/g, '<br>')"></span></span>
@@ -28,7 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue';
+import { defineProps, ref, watch, onMounted, nextTick } from 'vue';
+const thinksContainer = ref<HTMLElement | null>(null);
 
 type MessagePart = {
   type: 'text' | 'think';
@@ -42,6 +43,14 @@ type Message = {
 };
 
 const props = defineProps<{ messages: Message[]; streamingThinks?: string[] }>();
+
+// Auto-scroll to bottom when streamingThinks changes
+watch(() => props.streamingThinks, async () => {
+  await nextTick();
+  if (thinksContainer.value) {
+    thinksContainer.value.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+});
 </script>
 
 
