@@ -1,19 +1,12 @@
 <template>
-  <div class="max-w-3xl w-full mx-auto">
+  <div class="max-w-3xl w-full mx-auto pt-12">
     <ul class="space-y-2 list-none pl-0" aria-live="polite">
       <li v-for="msg in messages" :key="msg.id" :class="msg.role === 'user' ? 'text-right' : 'text-left'" class="dark:text-gray-200 text-gray-800">
         <span :class="msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-800'" class="inline-block px-3 py-2 rounded text-base content">
-            <template v-for="(part, i) in msg.parts" :key="i" >
-                <template v-if="part.type === 'text'">
-                    <span v-if="part.done" v-html="part.content" class="part-done-html" data-section="assistant-final"></span>
-                    <span v-else-if="part.type === 'text' && msg.role === 'user'" class="part-else-content" data-section="user-question">{{ part.content }}</span>
-                </template>
-                <template v-else-if="part.type === 'think'">
-                    <span class="think-block" aria-label="Reasoning" data-section="thinking">
-                    🧠 <span v-if="part.done" v-html="part.content"></span>
-                    <span v-else>{{ part.content }}</span>
-                    </span>
-                </template>
+            <template v-for="(part, i) in msg.parts" :key="i">
+                <MessageAssistantFinal v-if="part.type === 'text' && part.done" :content="part.content" />
+                <MessageUserQuestion v-else-if="part.type === 'text' && msg.role === 'user'" :content="part.content" />
+                <MessageThinking v-else-if="part.type === 'think'" :content="part.content" :done="part.done" />
             </template>
             <template v-if="msg.role === 'assistant' && props.fullAssistantMessages && msg.parentId && props.fullAssistantMessages[msg.parentId]">
               <div class="bg-gray-100 dark:bg-gray-800 dark:text-gray-200 text-gray-800 inline-block px-3 py-2 rounded text-base" data-section="assistant-full" v-html="marked.parse(props.fullAssistantMessages[msg.parentId] || '')">
