@@ -15,9 +15,9 @@
                     </span>
                 </template>
             </template>
-            <template v-if="fullAssistantMessage && msg.role === 'assistant'">
+            <template v-if="msg.role === 'assistant' && props.fullAssistantMessages && msg.parentId && props.fullAssistantMessages[msg.parentId]">
               <span class="bg-gray-100 dark:bg-gray-800 dark:text-gray-200 text-gray-800 inline-block px-3 py-2 rounded text-base">
-                <span v-html="marked.parse(fullAssistantMessage)"></span>
+                <span v-html="marked.parse(props.fullAssistantMessages[msg.parentId] || '')"></span>
               </span>
             </template>
         </span>
@@ -51,9 +51,10 @@ type Message = {
   role: 'user' | 'assistant';
   parts: MessagePart[];
   timestamp: string;
+  parentId?: string; // Only for assistant messages
 };
 
-const props = defineProps<{ messages: Message[]; streamingThinks?: string[]; fullAssistantMessage?: string }>();
+const props = defineProps<{ messages: Message[]; streamingThinks?: string[]; fullAssistantMessages?: Record<string, string> }>();
 
 // Auto-scroll to bottom when streamingThinks changes
 watch(() => props.streamingThinks, async () => {

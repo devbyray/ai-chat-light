@@ -26,7 +26,7 @@
     </header>
     <main class="flex-1 px-6 py-4">
       <div ref="msgListContainer" class="h-full overflow-y-auto max-h-[calc(80dvh-150px)]" role="log" aria-live="polite">
-        <MessageList :messages="messages" :streamingThinks="streamingThinks" :fullAssistantMessage="fullAssistantMessage" />
+        <MessageList :messages="messages" :streamingThinks="streamingThinks" :fullAssistantMessages="fullAssistantMessages" />
       </div>
       <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 text-sm" role="alert" aria-live="assertive">{{ errorMsg }}</div>
     </main>
@@ -60,6 +60,7 @@ type Message = {
   role: 'user' | 'assistant';
   parts: MessagePart[];
   timestamp: string;
+  parentId?: string; // Only for assistant messages
 };
 
 const messages = ref<Message[]>([]);
@@ -69,7 +70,7 @@ const selectedModel = ref<string>('');
 const modelsLoading = ref(true);
 const errorMsg = ref<string | undefined>(undefined);
 const streamingThinks = ref<string[]>([]);
-const fullAssistantMessage = ref<string>('');
+const fullAssistantMessages = ref<Record<string, string>>({});
 
 // Tailwind dark mode: toggle 'dark' class on <html> based on system preference
 onMounted(() => {
@@ -180,6 +181,7 @@ const handleSend = async (content: string) => {
                   role: 'assistant',
                   parts: [...assistantParts],
                   timestamp: new Date().toISOString(),
+                  parentId: userMsg.id,
                 });
               } else {
                 const idx = messages.value.findIndex(m => m.id === tempAssistantId);
@@ -261,10 +263,10 @@ const handleSend = async (content: string) => {
       if (idx !== -1) {
         messages.value[idx]!.parts = [...assistantParts];
         // Set the full assistant message after streaming ends
-        fullAssistantMessage.value = assistantParts.map(part => part.content).join('');
+        fullAssistantMessages.value[userMsg.id] = assistantParts.map(part => part.content).join('');
       }
     } else {
-      fullAssistantMessage.value = '';
+      fullAssistantMessages.value[userMsg.id] = '';
     }
     streamingThinks.value = [];
     if (!received) {
