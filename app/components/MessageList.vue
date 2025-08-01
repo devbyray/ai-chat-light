@@ -2,7 +2,7 @@
   <div class="max-w-3xl w-full mx-auto pt-12">
     <ul class="space-y-2 list-none pl-0" aria-live="polite">
       <li v-for="msg in messages" :key="msg.id" :class="msg.role === 'user' ? 'text-left pr-12' : 'pl-12 '" class="dark:text-gray-200 text-gray-800">
-        <span :class="msg.role === 'user' ? 'bg-blue-300 dark:bg-blue-900' : 'bg-gray-300 dark:bg-gray-800'" class="inline-flex px-3 py-2 rounded text-base content">
+        <span :class="msg.role === 'user' ? 'bg-blue-300 dark:bg-blue-900' : 'bg-gray-300 dark:bg-gray-800'" class="inline-flex px-3 py-2 rounded  content">
             <template v-for="(part, i) in msg.parts" :key="i">
                 <MessageAssistantFinal v-if="part.type === 'text' && part.done" :content="part.content" />
                 <MessageUserQuestion v-else-if="part.type === 'text' && msg.role === 'user'" :content="part.content" />
@@ -19,7 +19,7 @@
       <div
           v-for="(think, i) in streamingThinks"
           :key="i"
-          class="bg-gray-300 dark:bg-gray-800 dark:text-gray-200 text-gray-800 inline-block px-3 py-2 rounded text-base max-h-[20vh] overflow-hidden"
+          class="bg-gray-300 dark:bg-gray-800 dark:text-gray-200 text-gray-800 inline-block px-3 py-2 rounded  max-h-[20vh] overflow-hidden"
           aria-label="Reasoning"
           style="display:inline-block; margin-right:0.5rem;"
         >🧠 <span v-html="think.replace(/\n/g, '<br>')"></span>

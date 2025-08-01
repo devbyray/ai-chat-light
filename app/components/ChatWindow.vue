@@ -4,30 +4,17 @@
     aria-label="Chat window"
     tabindex="0"
   >
-    <header class="p-4 border-b  flex items-center gap-2 border-gray-500 dark:border-gray-700 dark:bg-gray-900/90 bg-white/90 fixed top-0 left-0 w-full z-10">
-      <h2 class="text-2xl font-bold flex-1">AI Chat</h2>
-      <div class="flex items-center gap-2">
-        <label for="model-select" class="font-medium text-sm">Model:</label>
-        <select
-          id="model-select"
-          v-model="selectedModel"
-          class="border border-gray-500 dark:border-gray-700 rounded px-2 py-2 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500"
-          :aria-busy="modelsLoading"
-          :disabled="modelsLoading"
-          aria-label="Select LLM model"
-        >
-          <option v-for="model in models" :key="model" :value="model">
-            {{ model }}
-          </option>
-        </select>
-        <span v-if="modelsLoading" class="ml-2 text-gray-500 text-xs">Loading…</span>
-      </div>
-    </header>
+    <AppHeader
+      :selectedModel="selectedModel"
+      :models="models"
+      :modelsLoading="modelsLoading"
+      :onModelChange="(model) => { selectedModel = model; }"
+    />
     <main class="flex-1 px-6 py-4  min-h-[80dvh] h-full overflow-y-auto">
       <div ref="msgListContainer" role="log" aria-live="polite" class="pb-16">
         <MessageList :loading="loading" :messages="messages" :streamingThinks="streamingThinks" :fullAssistantMessages="fullAssistantMessages" />
       </div>
-      <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 text-sm" role="alert" aria-live="assertive">{{ errorMsg }}</div>
+      <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 " role="alert" aria-live="assertive">{{ errorMsg }}</div>
     </main>
     <footer class="p-4 border-t border-gray-500 dark:border-gray-700 bg-gray-100/90 dark:bg-gray-900/90 fixed bottom-0 left-0 w-full">
       <div class="mx-auto max-w-3xl">
@@ -39,12 +26,12 @@
 
 <script setup lang="ts">
 import { nextTick, watch, ref as vueRef } from 'vue';
+import AppHeader from './AppHeader.vue';
 // ...existing code...
 
 const msgListContainer = vueRef<HTMLElement | null>(null);
 
 // ...existing code...
-
 
 import { ref, onMounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';

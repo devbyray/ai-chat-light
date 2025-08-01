@@ -1,5 +1,5 @@
 <template>
-  <div class="dark:bg-gray-900 dark:text-gray-100 min-h-[100dvh] p-4">
+  <div class="dark:bg-gray-900 dark:text-gray-100 min-h-[100dvh]">
     <ChatWindow />
   </div>
 

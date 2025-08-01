@@ -1,7 +1,12 @@
 @import "tailwindcss";
 
+:root {
+    --app-font-size: 16px;
+}
 
 .content {
+    font-size: var(--app-font-size, 16px);
+        line-height: 1.5;
     p {
         @apply mb-4;
     }

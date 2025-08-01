@@ -5,7 +5,7 @@
         id="chat-input"
         v-model="input"
         type="text"
-        class="flex-1 border rounded px-3 py-2 text-base"
+        class="flex-1 border rounded px-3 py-2"
         :aria-invalid="!!error"
         :aria-describedby="error ? 'input-error' : undefined"
         placeholder="Type your message..."
