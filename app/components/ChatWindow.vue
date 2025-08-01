@@ -1,4 +1,3 @@
-
 <template>
   <section
     class="w-full max-w-lg mx-auto mt-8 p-0 rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-800 flex flex-col"
@@ -27,7 +26,7 @@
     </header>
     <main class="flex-1 px-6 py-4">
       <div ref="msgListContainer" class="h-full overflow-y-auto max-h-[calc(80dvh-150px)]" role="log" aria-live="polite">
-        <MessageList :messages="messages" :streamingThinks="streamingThinks" />
+        <MessageList :messages="messages" :streamingThinks="streamingThinks" :fullAssistantMessage="fullAssistantMessage" />
       </div>
       <div v-if="errorMsg" class="mt-2 text-red-600 dark:text-red-400 text-sm" role="alert" aria-live="assertive">{{ errorMsg }}</div>
     </main>
@@ -70,6 +69,7 @@ const selectedModel = ref<string>('');
 const modelsLoading = ref(true);
 const errorMsg = ref<string | undefined>(undefined);
 const streamingThinks = ref<string[]>([]);
+const fullAssistantMessage = ref<string>('');
 
 // Tailwind dark mode: toggle 'dark' class on <html> based on system preference
 onMounted(() => {
@@ -146,7 +146,6 @@ const handleSend = async (content: string) => {
     }, 3000);
 
     let prevText = '';
-    // Streaming <think> block state
     let inThink = false;
     let thinkBuffer = '';
     let textBuffer = '';
@@ -204,6 +203,7 @@ const handleSend = async (content: string) => {
                   messages.value.push({
                     id: tempAssistantId ?? '',
                     role: 'assistant',
+         
                     parts: [...assistantParts],
                     timestamp: new Date().toISOString(),
                   });
@@ -217,7 +217,10 @@ const handleSend = async (content: string) => {
             }
             i = thinkStart + 7; // skip <think>
             inThink = true;
-            thinkBuffer = '';
+              thinkBuffer = '';
+             // Show arrays after each chunk
+            // eslint-disable-next-line no-console
+            console.log('streamingThinks:', JSON.stringify(streamingThinks.value), 'messages:', JSON.stringify(messages.value));
             // Start a new streaming think
             streamingThinks.value.push('');
           }
@@ -257,7 +260,11 @@ const handleSend = async (content: string) => {
       const idx = messages.value.findIndex(m => m.id === tempAssistantId);
       if (idx !== -1) {
         messages.value[idx]!.parts = [...assistantParts];
+        // Set the full assistant message after streaming ends
+        fullAssistantMessage.value = assistantParts.map(part => part.content).join('');
       }
+    } else {
+      fullAssistantMessage.value = '';
     }
     streamingThinks.value = [];
     if (!received) {
