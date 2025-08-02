@@ -26,6 +26,15 @@ description: User stories and acceptance criteria for the chat window feature, u
 - IF the network is unavailable, THEN THE SYSTEM SHALL display a connection error and allow retry.
 - IF the user submits an empty message, THEN THE SYSTEM SHALL prevent sending and show a validation message.
 
-### 6. Security
-- THE SYSTEM SHALL never expose API keys or secrets in the frontend code.
-- THE SYSTEM SHALL sanitize all user input and output to prevent XSS.
+### 7. MCP Server Management (SQLite + Prisma)
+
+- THE SYSTEM SHALL store information about MCP servers (e.g., name, URL, description, last used, enabled/disabled) in a local SQLite database using Prisma ORM.
+- THE SYSTEM SHALL allow users to add, edit, and remove MCP server entries via the UI.
+- THE SYSTEM SHALL allow users to select an active MCP server for chat sessions.
+- THE SYSTEM SHALL persist MCP server data across restarts, both locally and in Docker.
+- THE SYSTEM SHALL validate MCP server URLs before saving.
+- THE SYSTEM SHALL prevent duplicate MCP server entries (by URL).
+- THE SYSTEM SHALL provide a default/fallback MCP server entry if none exist.
+- THE SYSTEM SHALL never expose sensitive information (e.g., credentials) in the frontend code or logs.
+- THE SYSTEM SHALL use environment variables for any secrets or database configuration.
+- THE SYSTEM SHALL provide clear error messages for database or validation errors.
