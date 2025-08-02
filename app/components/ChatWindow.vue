@@ -35,7 +35,7 @@ const msgListContainer = vueRef<HTMLElement | null>(null);
 
 import { ref, onMounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import { Ollama } from 'ollama';
+// ...existing code...
 import MessageList from './MessageList.vue';
 import MessageInput from './MessageInput.vue';
 
@@ -74,13 +74,13 @@ onMounted(() => {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setHtmlDark);
 });
 
-const ollama = new Ollama({ host: 'http://localhost:11434' });
+// ...existing code...
 
 const fetchModels = async () => {
   modelsLoading.value = true;
   try {
-    const result = await ollama.list();
-    models.value = result.models.map((m: { name: string }) => m.name);
+    const result = await $fetch('/api/ollama/models') as { models: { name: string }[] };
+    models.value = result.models.map((m) => m.name);
     selectedModel.value = models.value[0] || '';
     errorMsg.value = undefined;
   } catch (err: any) {
@@ -118,14 +118,21 @@ const handleSend = async (content: string) => {
   try {
     let tempAssistantId: string | undefined = undefined;
     let assistantParts: MessagePart[] = [];
-    const chatStream = await ollama.chat({
-      model: selectedModel.value,
-      messages: messages.value.map((msg: Message) => ({
-        role: msg.role,
-        content: msg.parts.map(p => p.content).join(''),
-      })),
-      stream: true,
-    });
+    const chatResponse = await $fetch('/api/ollama/chat', {
+      method: 'POST',
+      body: {
+        model: selectedModel.value,
+        messages: messages.value.map((msg: Message) => ({
+          role: msg.role,
+          content: msg.parts.map(p => p.content).join(''),
+        })),
+        stream: false,
+      },
+    }) as { response: { message: { content: string } } };
+    // Simulate streaming by pushing the full response as a single chunk
+    const content = chatResponse.response.message.content;
+    let i = 0;
+    // ...existing code for parsing content and updating UI...
 
     // Show waiting message if nothing received after 3s
     timeoutId = setTimeout(() => {
@@ -138,30 +145,41 @@ const handleSend = async (content: string) => {
     let inThink = false;
     let thinkBuffer = '';
     let textBuffer = '';
-    for await (const chunk of chatStream) {
-      // eslint-disable-next-line no-console
-      console.log('Ollama chunk:', chunk);
-      received = true;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = undefined;
-        errorMsg.value = undefined;
-      }
-      let content = chunk.message.content;
-      let i = 0;
-      while (i < content.length) {
-        if (!inThink) {
-          const thinkStart = content.indexOf('<think>', i);
-          if (thinkStart === -1) {
-            // No <think> ahead, all is text
-            textBuffer += content.slice(i);
-            // Stream the final answer as it arrives
+    // Remove old chatStream loop, use only the new content parsing logic
+    // Parse the content as a single response (no streaming)
+    while (i < content.length) {
+      if (!inThink) {
+        const thinkStart = content.indexOf('<think>', i);
+        if (thinkStart === -1) {
+          textBuffer += content.slice(i);
+          if (textBuffer && textBuffer !== prevText) {
+            assistantParts.push({ type: 'text', content: textBuffer });
+            prevText = textBuffer;
+            textBuffer = '';
+            if (!tempAssistantId) {
+              tempAssistantId = uuidv4();
+              messages.value.push({
+                id: tempAssistantId ?? '',
+                role: 'assistant',
+                parts: [...assistantParts],
+                timestamp: new Date().toISOString(),
+                parentId: userMsg.id,
+              });
+            } else {
+              const idx = messages.value.findIndex(m => m.id === tempAssistantId);
+              if (idx !== -1) {
+                messages.value[idx]!.parts = [...assistantParts];
+              }
+            }
+          }
+          break;
+        } else {
+          if (thinkStart > i) {
+            textBuffer += content.slice(i, thinkStart);
             if (textBuffer && textBuffer !== prevText) {
-              // Only push new text
               assistantParts.push({ type: 'text', content: textBuffer });
               prevText = textBuffer;
               textBuffer = '';
-              // Update the assistant message in the list
               if (!tempAssistantId) {
                 tempAssistantId = uuidv4();
                 messages.value.push({
@@ -169,7 +187,6 @@ const handleSend = async (content: string) => {
                   role: 'assistant',
                   parts: [...assistantParts],
                   timestamp: new Date().toISOString(),
-                  parentId: userMsg.id,
                 });
               } else {
                 const idx = messages.value.findIndex(m => m.id === tempAssistantId);
@@ -178,87 +195,31 @@ const handleSend = async (content: string) => {
                 }
               }
             }
-            break;
-          } else {
-            // Text before <think>
-            if (thinkStart > i) {
-              textBuffer += content.slice(i, thinkStart);
-              if (textBuffer && textBuffer !== prevText) {
-                assistantParts.push({ type: 'text', content: textBuffer });
-                prevText = textBuffer;
-                textBuffer = '';
-                // Update the assistant message in the list
-                if (!tempAssistantId) {
-                  tempAssistantId = uuidv4();
-                  messages.value.push({
-                    id: tempAssistantId ?? '',
-                    role: 'assistant',
-         
-                    parts: [...assistantParts],
-                    timestamp: new Date().toISOString(),
-                  });
-                } else {
-                  const idx = messages.value.findIndex(m => m.id === tempAssistantId);
-                  if (idx !== -1) {
-                    messages.value[idx]!.parts = [...assistantParts];
-                  }
-                }
-              }
-            }
-            i = thinkStart + 7; // skip <think>
-            inThink = true;
-              thinkBuffer = '';
-             // Show arrays after each chunk
-            // eslint-disable-next-line no-console
-            console.log('streamingThinks:', JSON.stringify(streamingThinks.value), 'messages:', JSON.stringify(messages.value));
-            // Start a new streaming think
-            streamingThinks.value.push('');
           }
+          i = thinkStart + 7;
+          inThink = true;
+          thinkBuffer = '';
+          streamingThinks.value.push('');
+        }
+      } else {
+        const thinkEnd = content.indexOf('</think>', i);
+        if (thinkEnd === -1) {
+          thinkBuffer += content.slice(i);
+          if (streamingThinks.value.length > 0) {
+            streamingThinks.value[streamingThinks.value.length - 1] = thinkBuffer;
+          }
+          break;
         } else {
-          const thinkEnd = content.indexOf('</think>', i);
-          if (thinkEnd === -1) {
-            // All is part of <think>
-            thinkBuffer += content.slice(i);
-            // Update last streaming think
-            if (streamingThinks.value.length > 0) {
-              streamingThinks.value[streamingThinks.value.length - 1] = thinkBuffer;
-            }
-            break;
-          } else {
-            // End of <think> found
-            thinkBuffer += content.slice(i, thinkEnd);
-            // Update last streaming think
-            if (streamingThinks.value.length > 0) {
-              streamingThinks.value[streamingThinks.value.length - 1] = thinkBuffer;
-            }
-            // Remove from streamingThinks
-            streamingThinks.value.pop();
-            inThink = false;
-            thinkBuffer = '';
-            i = thinkEnd + 8; // skip </think>
+          thinkBuffer += content.slice(i, thinkEnd);
+          if (streamingThinks.value.length > 0) {
+            streamingThinks.value[streamingThinks.value.length - 1] = thinkBuffer;
           }
+          streamingThinks.value.pop();
+          inThink = false;
+          thinkBuffer = '';
+          i = thinkEnd + 8;
         }
       }
-    }
-    // After stream ends, flush any remaining text
-    if (textBuffer && textBuffer !== prevText) {
-      assistantParts.push({ type: 'text', content: textBuffer });
-      prevText = textBuffer;
-    }
-    // After stream ends, update the assistant message one last time to show the final answer
-    if (tempAssistantId) {
-      const idx = messages.value.findIndex(m => m.id === tempAssistantId);
-      if (idx !== -1) {
-        messages.value[idx]!.parts = [...assistantParts];
-        // Set the full assistant message after streaming ends
-        fullAssistantMessages.value[userMsg.id] = assistantParts.map(part => part.content).join('');
-      }
-    } else {
-      fullAssistantMessages.value[userMsg.id] = '';
-    }
-    streamingThinks.value = [];
-    if (!received) {
-      errorMsg.value = 'No response received from model.';
     }
   } catch (err: any) {
     errorMsg.value = 'Error: ' + (err?.message || 'Failed to get response.');
