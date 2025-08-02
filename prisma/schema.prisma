@@ -1,0 +1,21 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model MCPServer {
+  id          Int      @id @default(autoincrement())
+  name        String
+  url         String   @unique
+  description String?
+  lastUsed    DateTime?
+  enabled     Boolean  @default(true)
+}
