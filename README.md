@@ -1,6 +1,23 @@
-# Nuxt Minimal Starter
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+# AI Chat Light
+
+AI Chat Light is a lightweight, privacy-friendly AI chat application designed for local AI LLMs. It supports Ollama and MCP servers, and is built with Nuxt.js 3 and Tailwind CSS for a fast, accessible, and modern user experience.
+
+## Features
+
+- Chat with local LLMs (Ollama, MCP)
+- Fast, minimal UI with accessibility in mind
+- No cloud dependencies by default
+- Easy to run locally or in Docker
+
+---
+
+## Usage
+
+You can use AI Chat Light to interact with your own local AI models. Simply run the app, connect it to your Ollama or MCP server, and start chatting.
+
+---
+
 
 ## Setup
 
@@ -20,7 +37,8 @@ yarn install
 bun install
 ```
 
-## Development Server
+
+## Running Locally
 
 Start the development server on `http://localhost:3000`:
 
@@ -37,6 +55,22 @@ yarn dev
 # bun
 bun run dev
 ```
+
+
+---
+
+## Running with Docker
+
+You can run the app in a containerized environment using Docker:
+
+```bash
+docker build -t ai-chat-light .
+docker run -p 3000:3000 ai-chat-light
+```
+
+The app will be available at [http://localhost:3000](http://localhost:3000).
+
+---
 
 ## Production
 
@@ -56,6 +90,7 @@ yarn build
 bun run build
 ```
 
+
 Locally preview production build:
 
 ```bash
@@ -72,4 +107,13 @@ yarn preview
 bun run preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+---
+
+## More Information
+
+- [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction)
+- [Ollama](https://ollama.com/)
+- [Model Context Protocol (MCP)](https://github.com/modelcontext/protocol)
+
+---
