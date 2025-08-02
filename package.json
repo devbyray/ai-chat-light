@@ -28,6 +28,8 @@
   },
   "devDependencies": {
     "@types/uuid": "^10.0.0",
-    "prisma": "^6.13.0"
+    "ofetch": "^1.4.1",
+    "prisma": "^6.13.0",
+    "vitest": "^3.2.4"
   }
 }

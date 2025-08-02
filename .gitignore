@@ -1,4 +1,12 @@
 # Nuxt dev/build outputs
+
+# Prisma generated files
+app/prisma/dev.db
+app/prisma/dev.db-journal
+app/prisma/migrations/
+app/prisma/.env
+app/prisma/.DS_Store
+app/prisma/generated
 .output
 .data
 .nuxt
