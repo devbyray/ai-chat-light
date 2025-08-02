@@ -20,17 +20,32 @@
       </li>
     </ul>
     <p v-else>No MCP servers found.</p>
-    <div v-if="showAdd || editing" class="modal-overlay" role="dialog" aria-modal="true">
-      <div class="modal-content">
-        <MCPServerForm :server="editing" @close="closeForm" @saved="onSaved" />
-      </div>
-    </div>
+    <dialog ref="dialogRef" :open="showAdd || editing !== undefined" class="mcp-dialog" @close="closeForm">
+      <MCPServerForm :server="editing" @close="closeDialog" @saved="onSaved" />
+    </dialog>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import MCPServerForm from './MCPServerForm.vue';
+
+const showAdd = ref(false);
+const editing = ref<MCPServer | undefined>(undefined);
+const dialogRef = ref<HTMLDialogElement>();
+
+// Open/close dialog reactively
+watch([showAdd, editing], ([add, edit]) => {
+  if ((add || edit) && dialogRef.value && !dialogRef.value.open) {
+    dialogRef.value.showModal();
+  } else if (!(add || edit) && dialogRef.value && dialogRef.value.open) {
+    dialogRef.value.close();
+  }
+});
+
+const closeDialog = () => {
+  showAdd.value = false;
+  editing.value = undefined;
+  if (dialogRef.value && dialogRef.value.open) dialogRef.value.close();
+};
 
 
 interface MCPServer {
@@ -44,8 +59,6 @@ interface MCPServer {
 
 const servers = ref<MCPServer[]>([]);
 const activeId = ref<number>();
-const showAdd = ref(false);
-const editing = ref<MCPServer | undefined>(undefined);
 
 const fetchServers = async () => {
   servers.value = await $fetch('/api/mcp');
@@ -66,10 +79,7 @@ const remove = async (id: number) => {
   fetchServers();
 };
 
-const closeForm = () => {
-  showAdd.value = false;
-  editing.value = undefined;
-};
+const closeForm = closeDialog;
 
 const onSaved = () => {
   closeForm();
@@ -114,25 +124,20 @@ li {
 .actions button {
   margin-left: 0.5em;
 }
-/* Modal overlay for form UX */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.modal-content {
-  background: #fff;
+.mcp-dialog {
+  border: none;
   border-radius: 8px;
   box-shadow: 0 2px 16px rgba(0,0,0,0.15);
-  padding: 2rem;
-  min-width: 320px;
-  max-width: 95vw;
+  padding: 0;
+  width: 500px;
+  height: auto;
+  background: transparent;
+  overflow: visible;
+  position: absolute;
+  left: 50%;
+    margin-left: -250px;
+}
+.mcp-dialog::backdrop {
+  background: rgba(0,0,0,0.3);
 }
 </style>
