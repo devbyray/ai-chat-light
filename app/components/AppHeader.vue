@@ -33,7 +33,12 @@
         A+
       </button>
     </div>
+    <nav class="main-nav ml-8">
+      <a href="/" class="nav-link">Chat</a>
+      <a href="/mcp-servers" class="nav-link">MCP Servers</a>
+    </nav>
   </header>
+
 </template>
 
 <script setup lang="ts">
@@ -90,5 +95,23 @@ onMounted(() => {
 header {
   position: sticky;
   top: 0;
+}
+
+/* Navigation styles */
+.main-nav {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+.nav-link {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1.1rem;
+  transition: color 0.2s;
+}
+.nav-link:hover, .nav-link:focus {
+  color: #007bff;
+  outline: none;
 }
 </style>

@@ -35,17 +35,18 @@ description: Trackable implementation plan for the chat window feature.
 ### 5. Unit Tests
 
 ### 6. MCP Server Management (SQLite + Prisma)
-- [x] Set up Prisma in the project and configure it for SQLite
-- [x] Design and implement the MCP server model (name, URL, description, last used, enabled/disabled)
-- [x] Generate and run Prisma migrations to create the database schema
-- [x] Implement backend API endpoints for CRUD operations on MCP servers
-- [ ] Add UI components for listing, adding, editing, and removing MCP servers
-- [x] Implement validation for MCP server URLs and prevent duplicates
-- [ ] Allow users to select the active MCP server for chat sessions
-- [ ] Ensure data persists across restarts and in Docker (mount SQLite file as volume)
-- [x] Use environment variables for secrets and database config
-- [ ] Handle and display database/validation errors in the UI
-- [ ] Write Vitest tests for MCP server management logic and UI
+### 6. MCP Server Management (SQLite + Prisma)
+ - [x] Set up Prisma in the project and configure it for SQLite
+ - [x] Design and implement the MCP server model (name, URL, description, last used, enabled/disabled)
+ - [x] Generate and run Prisma migrations to create the database schema
+ - [x] Implement backend API endpoints for CRUD operations on MCP servers
+ - [ ] Add UI components for listing, adding, editing, and removing MCP servers
+ - [x] Implement validation for MCP server URLs and prevent duplicates
+ - [ ] Allow users to select the active MCP server for chat sessions
+ - [ ] Ensure data persists across restarts and in Docker (mount SQLite file as volume)
+ - [x] Use environment variables for secrets and database config
+ - [ ] Handle and display database/validation errors in the UI
+ - [x] Write Vitest tests for MCP server management logic and UI
 Outcome: Users can manage MCP servers in a persistent, secure, and user-friendly way
 Dependencies: Prisma, SQLite, backend API, UI components
 ```
