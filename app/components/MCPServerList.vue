@@ -20,30 +20,31 @@
       </li>
     </ul>
     <p v-else>No MCP servers found.</p>
-    <dialog ref="dialogRef" :open="showAdd || editing !== undefined" class="mcp-dialog" @close="closeForm">
-      <MCPServerForm :server="editing" @close="closeDialog" @saved="onSaved" />
+    <dialog ref="dialogRef" :open="showAdd" class="mcp-dialog" @close="closeForm">
+      <MCPServerForm v-if="showAdd" @close="closeDialog" @saved="onSaved" />
     </dialog>
   </section>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 const showAdd = ref(false);
-const editing = ref<MCPServer | undefined>(undefined);
 const dialogRef = ref<HTMLDialogElement>();
+const router = useRouter();
 
-// Open/close dialog reactively
-watch([showAdd, editing], ([add, edit]) => {
-  if ((add || edit) && dialogRef.value && !dialogRef.value.open) {
+// Open/close dialog reactively for Add only
+watch(showAdd, (add) => {
+  if (add && dialogRef.value && !dialogRef.value.open) {
     dialogRef.value.showModal();
-  } else if (!(add || edit) && dialogRef.value && dialogRef.value.open) {
+  } else if (!add && dialogRef.value && dialogRef.value.open) {
     dialogRef.value.close();
   }
 });
 
 const closeDialog = () => {
   showAdd.value = false;
-  editing.value = undefined;
   if (dialogRef.value && dialogRef.value.open) dialogRef.value.close();
 };
 
@@ -70,8 +71,7 @@ const select = async (id: number) => {
 };
 
 const edit = (server: any) => {
-  editing.value = server;
-  showAdd.value = false;
+  router.push(`/mcp/${server.id}`);
 };
 
 const remove = async (id: number) => {

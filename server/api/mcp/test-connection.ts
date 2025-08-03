@@ -21,18 +21,40 @@ export default defineEventHandler(async (event) => {
     });
     const transport = new StreamableHTTPClientTransport(new URL(url));
     await client.connect(transport);
-    try {
-      const resources = await client.listResources();
-      console.log('[MCP test-connection] listResources result:', resources);
-      return { ok: true };
-    } catch (e: any) {
-      console.log('[MCP test-connection] listResources error:', e);
-      // If error is -32601 (Method not found), treat as successful MCP handshake
-      if (e?.message && /-32601/.test(e.message)) {
-        return { ok: true, warning: 'Server does not support listResources, but is MCP-compatible.' };
+    // Try all standard MCP client methods and log results
+    const results: Record<string, { ok: boolean; error?: string }> = {};
+    // Helper to test a method
+    const testMethod = async (name: string, fn: () => Promise<any>) => {
+      try {
+        const res = await fn();
+        console.log(`[MCP test-connection] ${name} result:`, res);
+        results[name] = { ok: true };
+      } catch (e: any) {
+        console.log(`[MCP test-connection] ${name} error:`, e);
+        if (e?.message && /-32601/.test(e.message)) {
+          results[name] = { ok: false, error: 'Method not found (-32601)' };
+        } else {
+          results[name] = { ok: false, error: e?.message || 'Unknown error' };
+        }
       }
-      return { ok: false, error: e?.message || 'MCP connection failed.' };
+    };
+    // List of standard MCP client methods to test
+    await testMethod('listPrompts', () => client.listPrompts());
+    await testMethod('listResources', () => client.listResources());
+    await testMethod('listTools', () => client.listTools());
+    // Consider connection ok if any method succeeded
+    const anyOk = Object.values(results).some(r => r.ok);
+    if (anyOk) {
+      return { ok: true, capabilities: results };
     }
+    // If all failed, show a user-friendly error message
+    let errorMsg = 'Could not connect to the MCP server or it does not support any standard features (prompts, resources, or tools). Please check the server URL and ensure it is a valid MCP server.';
+    // If all failed with -32601, clarify that the server does not support any standard MCP methods
+    const allMethodNotFound = Object.values(results).every(r => r.error === 'Method not found (-32601)');
+    if (allMethodNotFound) {
+      errorMsg = 'The MCP server responded, but does not support any of the standard MCP features (listPrompts, listResources, or listTools). Please verify the server implementation or try a different server.';
+    }
+    return { ok: false, capabilities: results, error: errorMsg };
   } catch (e: any) {
     return { ok: false, error: e?.message || 'MCP connection failed.' };
   }

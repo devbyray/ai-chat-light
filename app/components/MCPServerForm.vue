@@ -19,7 +19,29 @@
         <button type="button" @click="$emit('close')" class="px-4 py-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">Cancel</button>
         <button type="button" @click="testConnection" :disabled="testing" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-green-500 dark:hover:bg-green-600">{{ testing ? 'Testing...' : 'Test Connection' }}</button>
       </div>
-      <p v-if="testResult" :class="['mt-2', testResult.ok ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']" role="status">{{ testResult.ok ? 'Connection successful!' : `Connection failed: ${testResult.error}` }}</p>
+      <p v-if="testResult" :class="['mt-2', testResult.ok ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']" role="status">
+        {{ testResult.ok ? 'Connection successful!' : `Connection failed: ${testResult.error}` }}
+      </p>
+      <div v-if="testResult && testResult.capabilities" class="mt-2 rounded bg-gray-50 dark:bg-gray-800 p-3" aria-live="polite">
+        <div class="font-medium mb-1 text-gray-800 dark:text-gray-100">MCP Server Capabilities:</div>
+        <ul class="list-disc ml-6">
+          <li v-for="(cap, name) in testResult.capabilities" :key="name" class="text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <span class="font-mono">{{ name }}</span>:
+            <template v-if="cap.ok">
+              <span class="text-green-700 dark:text-green-400 flex items-center gap-1">
+                Supported
+                <svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+              </span>
+            </template>
+            <template v-else>
+              <span class="text-red-700 dark:text-red-400 flex items-center gap-1">
+                Not supported
+                <svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" /></svg>
+              </span>
+            </template>
+          </li>
+        </ul>
+      </div>
       <p v-if="error" class="error text-red-600 dark:text-red-400 mt-2" role="alert">{{ error }}</p>
     </form>
   </div>
@@ -48,7 +70,12 @@ const form = ref<MCPServer>({
 });
 const error = ref('');
 const testing = ref(false);
-const testResult = ref<{ ok: boolean; error?: string } | null>(null);
+type MCPTestResult = {
+  ok: boolean;
+  error?: string;
+  capabilities?: Record<string, { ok: boolean; error?: string }>;
+};
+const testResult = ref<MCPTestResult | null>(null);
 
 watch(
   () => props.server,
